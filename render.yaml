@@ -1,0 +1,100 @@
+services:
+  # 1. Message Broker (Node.js)
+  - type: web
+    name: message-broker
+    env: node
+    buildCommand: cd message-broker && npm install
+    startCommand: cd message-broker && node server.js
+    envVars:
+      - key: PORT
+        value: 4000
+
+  # 2. User Service (Node.js)
+  - type: web
+    name: user-service
+    env: node
+    buildCommand: cd user-service && npm install
+    startCommand: cd user-service && node server.js
+    envVars:
+      - key: MONGO_URI
+        sync: false # Set this in Render Dashboard after linking Atlas
+      - key: PORT
+        value: 5000
+
+  # 3. Restaurant Service (Node.js)
+  - type: web
+    name: restaurant-service
+    env: node
+    buildCommand: cd restaurant-service && npm install
+    startCommand: cd restaurant-service && node server.js
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: PORT
+        value: 8080
+      - key: BROKER_URL
+        fromService:
+          name: message-broker
+          type: web
+          property: host
+        path: /subscribe
+      - key: SELF_URL
+        fromService:
+          name: restaurant-service
+          type: web
+          property: host
+        path: /events
+
+  # 4. Order Service (Python)
+  - type: web
+    name: order-service
+    env: python
+    buildCommand: cd order-service && pip install fastapi uvicorn motor httpx
+    startCommand: cd order-service && uvicorn main.py:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: BROKER_URL
+        fromService:
+          name: message-broker
+          type: web
+          property: host
+        path: /publish
+
+  # 5. API Gateway (Node.js)
+  - type: web
+    name: api-gateway
+    env: node
+    buildCommand: cd api-gateway && npm install
+    startCommand: cd api-gateway && node server.js
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: USER_SERVICE
+        fromService:
+          name: user-service
+          type: web
+          property: host
+      - key: RESTAURANT_SERVICE
+        fromService:
+          name: restaurant-service
+          type: web
+          property: host
+      - key: ORDER_SERVICE_URLS
+        fromService:
+          name: order-service
+          type: web
+          property: host
+
+  # 6. Frontend (Static Site / Vite)
+  - type: web
+    name: food-delivery-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    publishDir: frontend/dist
+    envVars:
+      - key: VITE_API_GATEWAY_URL
+        fromService:
+          name: api-gateway
+          type: web
+          property: host
