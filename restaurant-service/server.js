@@ -53,13 +53,23 @@ async function seedMenu() {
 }
 
 // 1. Subscribe to Message Broker
-async function subscribe() {
+async function subscribe(attempts = 0) {
   try {
+    console.log(`📡 Attempting to subscribe to: ${BROKER_URL}... (Attempt ${attempts + 1})`);
     await axios.post(BROKER_URL, { topic: 'ORDER_CREATED', url: SELF_URL });
     console.log('✅ Subscribed to ORDER_CREATED events');
   } catch (err) {
-    console.log(`❌ Failed to subscribe: ${err.message} `);
-    setTimeout(subscribe, 3000); // Retry
+    const status = err.response ? err.response.status : 'NETWORK_ERROR';
+    console.log(`❌ Subscription failed [${status}]: ${err.message}`);
+
+    if (status === 429) {
+      console.log('💡 Rate Limited! Waiting longer before retry...');
+    }
+
+    // Exponential backoff: 5s, 10s, 20s, up to 1 minute
+    const delay = Math.min(Math.pow(2, attempts) * 5000, 60000);
+    console.log(`⏳ Retrying in ${delay / 1000} seconds...`);
+    setTimeout(() => subscribe(attempts + 1), delay);
   }
 }
 
