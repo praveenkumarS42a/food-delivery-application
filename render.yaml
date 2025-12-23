@@ -87,7 +87,7 @@ services:
           property: host
 
   # 6. Frontend (Static Site / Vite)
-  - type: web
+  - type: static
     name: food-delivery-frontend
     env: static
     buildCommand: cd frontend && npm install && npm run build
