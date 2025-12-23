@@ -6,7 +6,10 @@ import motor.motor_asyncio
 
 import os
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 8001))
+try:
+    PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 8001))
+except (ValueError, IndexError):
+    PORT = int(os.environ.get("PORT", 8001))
 BROKER_URL = os.environ.get("BROKER_URL", "http://localhost:4000/publish")
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 
