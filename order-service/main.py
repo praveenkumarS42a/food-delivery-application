@@ -15,6 +15,10 @@ MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 
 app = FastAPI()
 
+@app.get("/")
+async def root():
+    return {"message": "Order Service is running", "endpoints": ["/orders", "/orders/user/{user_id}", "/health"]}
+
 # MongoDB Connection
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
 db = client['food-delivery']
