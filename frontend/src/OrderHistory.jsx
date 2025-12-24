@@ -3,7 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, CheckCircle, Package, MapPin, ChevronLeft, Loader2, AlertCircle } from 'lucide-react';
 
-const API_GATEWAY = 'http://localhost:3000';
+const API_GATEWAY = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000';
 
 export default function OrderHistory({ userId, onBack }) {
     const [orders, setOrders] = useState([]);
